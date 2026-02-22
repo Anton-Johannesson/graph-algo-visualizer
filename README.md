@@ -115,11 +115,6 @@ System.out.println(result.getSteps());
 4. Build JavaFX canvas + controls
 5. Add import/export graph JSON
 
-## Contributing
-
-1. Create a branch: `git switch -c feature/<name>`
-2. Commit changes with clear messages
-3. Push and open a PR
 
 ## License
 
