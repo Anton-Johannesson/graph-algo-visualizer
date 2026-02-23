@@ -15,15 +15,39 @@ import algorithm_visualizer.model.Edge;
 import algorithm_visualizer.model.Graph;
 import algorithm_visualizer.steps.AlgorithmStep;
 
+/**
+ * Breadth-First Search (BFS) algorithm implementation.
+ * <p>
+ * BFS explores nodes level by level, visiting all neighbors of a node
+ * before moving to the next level. This guarantees finding the shortest
+ * path in unweighted graphs.
+ * </p>
+ */
 public class BFS {
 
     private BFS() {
     }
 
+    /**
+     * Runs BFS from the start node, exploring all reachable nodes.
+     *
+     * @param graph   the graph to search
+     * @param startId the starting node ID
+     * @return the result containing visit order, parent map, distances, and steps
+     */
     public static BfsResult run(Graph graph, int startId) {
         return run(graph, startId, null);
     }
 
+    /**
+     * Runs BFS from start node, optionally stopping when target is found.
+     *
+     * @param graph    the graph to search
+     * @param startId  the starting node ID
+     * @param targetId optional target node ID (null to explore entire graph)
+     * @return the result containing visit order, parent map, distances, and steps
+     * @throws IllegalArgumentException if start or target node does not exist
+     */
     public static BfsResult run(Graph graph, int startId, Integer targetId) {
         Objects.requireNonNull(graph, "graph must not be null");
 
@@ -78,6 +102,9 @@ public class BFS {
         return new BfsResult(foundTarget, visitOrder, parent, distance, steps);
     }
 
+    /**
+     * Contains the results of a BFS execution.
+     */
     public static class BfsResult {
         private final boolean found;
         private final List<Integer> visitOrder;
@@ -97,22 +124,27 @@ public class BFS {
             this.steps = new ArrayList<>(steps);
         }
 
+        /** Returns true if the target was found (or no target was specified). */
         public boolean isFound() {
             return found;
         }
 
+        /** Returns the order in which nodes were visited. */
         public List<Integer> getVisitOrder() {
             return Collections.unmodifiableList(visitOrder);
         }
 
+        /** Returns a map from each node to its parent in the BFS tree. */
         public Map<Integer, Integer> getParent() {
             return Collections.unmodifiableMap(parent);
         }
 
+        /** Returns a map from each node to its distance (in hops) from the start. */
         public Map<Integer, Integer> getDistance() {
             return Collections.unmodifiableMap(distance);
         }
 
+        /** Returns the list of algorithm steps for visualization. */
         public List<AlgorithmStep> getSteps() {
             return Collections.unmodifiableList(steps);
         }

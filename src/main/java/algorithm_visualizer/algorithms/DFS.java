@@ -12,16 +12,39 @@ import algorithm_visualizer.model.Edge;
 import algorithm_visualizer.model.Graph;
 import algorithm_visualizer.steps.AlgorithmStep;
 
+/**
+ * Depth-First Search (DFS) algorithm implementation.
+ * <p>
+ * DFS explores as far as possible along each branch before backtracking.
+ * It uses recursion (or a stack) to traverse the graph.
+ * </p>
+ */
 public class DFS {
 
     private DFS() {
 
     }
 
+    /**
+     * Runs DFS from the start node, exploring all reachable nodes.
+     *
+     * @param graph   the graph to search
+     * @param startId the starting node ID
+     * @return the result containing visit order, parent map, and steps
+     */
     public static DfsResult run(Graph graph, int startId) {
         return runDfs(graph, startId, null);
     }
 
+    /**
+     * Runs DFS from start node, optionally stopping when target is found.
+     *
+     * @param graph    the graph to search
+     * @param startId  the starting node ID
+     * @param targetId optional target node ID (null to explore entire graph)
+     * @return the result containing visit order, parent map, and steps
+     * @throws IllegalArgumentException if start or target node does not exist
+     */
     public static DfsResult runDfs(Graph graph, int startId, Integer targetId) {
         Objects.requireNonNull(graph, "graph must be not null");
 
@@ -46,6 +69,9 @@ public class DFS {
         return new DfsResult(found, visitOrder, parent, steps);
     }
 
+    /**
+     * Recursive helper method that performs the actual DFS traversal.
+     */
     private static boolean dfsRecursive(Graph graph, int current, Integer targetId,
             Set<Integer> visited, Map<Integer, Integer> parent,
             List<Integer> visitOrder, List<AlgorithmStep> steps) {
@@ -72,6 +98,9 @@ public class DFS {
         return false;
     }
 
+    /**
+     * Contains the results of a DFS execution.
+     */
     public static class DfsResult {
         private final boolean found;
         private final List<Integer> visitOrder;
@@ -86,18 +115,22 @@ public class DFS {
             this.steps = new ArrayList<>(steps);
         }
 
+        /** Returns true if the target was found (or no target was specified). */
         public boolean isFound() {
             return this.found;
         }
 
+        /** Returns the order in which nodes were visited. */
         public List<Integer> getVisitOrder() {
             return this.visitOrder;
         }
 
+        /** Returns a map from each node to its parent in the DFS tree. */
         public Map<Integer, Integer> getParent() {
             return this.parent;
         }
 
+        /** Returns the list of algorithm steps for visualization. */
         public List<AlgorithmStep> getSteps() {
             return this.steps;
         }

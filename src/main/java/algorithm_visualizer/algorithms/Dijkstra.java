@@ -13,16 +13,42 @@ import algorithm_visualizer.model.Edge;
 import algorithm_visualizer.model.Graph;
 import algorithm_visualizer.steps.AlgorithmStep;
 
+/**
+ * Dijkstra's shortest path algorithm implementation.
+ * <p>
+ * Dijkstra's algorithm finds the shortest path from a source node to all
+ * other nodes in a weighted graph with non-negative edge weights. It uses
+ * a priority queue to always expand the node with the smallest tentative
+ * distance.
+ * </p>
+ */
 public class Dijkstra {
 
     private Dijkstra() {
 
     }
 
+    /**
+     * Runs Dijkstra's algorithm from the start node to compute shortest paths.
+     *
+     * @param graph   the weighted graph to search
+     * @param startId the starting node ID
+     * @return the result containing visit order, parent map, distances, and steps
+     */
     public static DijkstraResult run(Graph graph, int startId) {
         return run(graph, startId, null);
     }
 
+    /**
+     * Runs Dijkstra's algorithm from start node, optionally stopping when target is
+     * found.
+     *
+     * @param graph    the weighted graph to search
+     * @param startId  the starting node ID
+     * @param targetId optional target node ID (null to compute all shortest paths)
+     * @return the result containing visit order, parent map, distances, and steps
+     * @throws IllegalArgumentException if start or target node does not exist
+     */
     public static DijkstraResult run(Graph graph, int startId, Integer targetId) {
         Objects.requireNonNull(graph, "graph must not be null");
 
@@ -85,6 +111,9 @@ public class Dijkstra {
 
     }
 
+    /**
+     * Priority queue element containing a node and its tentative distance.
+     */
     private static class PQElement {
         private final int node;
         private double distance;
@@ -95,6 +124,9 @@ public class Dijkstra {
         }
     }
 
+    /**
+     * Contains the results of a Dijkstra execution.
+     */
     public static class DijkstraResult {
         private final boolean found;
         private final List<Integer> visitOrder;
@@ -114,22 +146,27 @@ public class Dijkstra {
             this.steps = new ArrayList<>(steps);
         }
 
+        /** Returns true if the target was found (or no target was specified). */
         public boolean isFound() {
             return found;
         }
 
+        /** Returns the order in which nodes were visited (settled). */
         public List<Integer> getVisitOrder() {
             return Collections.unmodifiableList(visitOrder);
         }
 
+        /** Returns a map from each node to its parent in the shortest path tree. */
         public Map<Integer, Integer> getParent() {
             return Collections.unmodifiableMap(parent);
         }
 
+        /** Returns a map from each node to its shortest distance from the start. */
         public Map<Integer, Double> getDistance() {
             return Collections.unmodifiableMap(distance);
         }
 
+        /** Returns the list of algorithm steps for visualization. */
         public List<AlgorithmStep> getSteps() {
             return Collections.unmodifiableList(steps);
         }

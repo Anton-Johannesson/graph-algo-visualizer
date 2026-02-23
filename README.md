@@ -1,76 +1,78 @@
-# Graph Algo Visualizer
+# Graph Algorithm Visualizer
 
-Java-based graph algorithm visualizer focused on step-by-step simulation for learning and demonstration.
+An interactive Java-based graph algorithm visualizer with step-by-step animation for learning and demonstration purposes.
 
-## Project Goal
+![Java](https://img.shields.io/badge/Java-25-blue)
+![JavaFX](https://img.shields.io/badge/JavaFX-21-green)
+![Maven](https://img.shields.io/badge/Maven-3.8+-orange)
 
-Build a clean architecture where algorithms produce **steps/events**, and the GUI plays those steps as animations.
+## Features
 
-This keeps algorithm logic independent from rendering logic.
-
-## Current Status
-
-### Implemented
-
-- Core graph model:
-	- `Node`
-	- `Edge`
-	- `Position`
-	- `Graph` (directed/undirected support)
-- Step/event system:
-	- `StepType`
-	- `AlgorithmStep`
-- Algorithm:
-	- `BFS` with result object and step generation
-- Unit tests for:
-	- model classes
-	- step classes
-	- BFS
-
-### Planned
-
-- `DFS`
-- `Dijkstra`
-- `Edmonds-Karp` (max flow)
-- JavaFX GUI with:
-	- graph drawing
-	- algorithm dropdown
-	- run/pause/step controls
-	- speed slider
+- **Interactive Graph Editing**: Create and modify graphs using mouse interactions
+  - Left-click to add nodes
+  - Drag nodes to reposition them
+  - Right-click context menu for edge creation and node deletion
+- **Multiple Algorithms**:
+  - **BFS** (Breadth-First Search) - Level-by-level traversal
+  - **DFS** (Depth-First Search) - Depth-first traversal with backtracking
+  - **Dijkstra** - Shortest path with weighted edges
+  - **Edmonds-Karp** - Maximum flow computation
+- **Animation Controls**:
+  - Play/Pause continuous playback
+  - Step forward/backward through algorithm execution
+  - Adjustable playback speed
+- **Visual Feedback**:
+  - Color-coded node states (visited, queued, current, source, sink)
+  - Edge highlighting for paths and flow
+  - Real-time step counter and log
 
 ## Architecture
 
-### Key Design Rule
+### Key Design Principle
 
-Algorithms do **not** draw anything.
+Algorithms produce **steps/events**, and the GUI animates them independently. This separation keeps algorithm logic pure and testable.
 
-They only output a list of `AlgorithmStep` entries, e.g.:
+### Step Types
 
-- `VISIT_NODE`
-- `SET_PARENT`
-- `RELAX_EDGE`
-- `UPDATE_FLOW`
-- `DONE`
-
-The future GUI reads those steps and animates them.
+| Step Type | Description |
+|-----------|-------------|
+| `VISIT_NODE` | Mark a node as visited |
+| `SET_PARENT` | Set parent in traversal tree |
+| `RELAX_EDGE` | Update distance (Dijkstra) |
+| `UPDATE_FLOW` | Augment flow (Edmonds-Karp) |
+| `DONE` | Algorithm completed |
 
 ### Package Structure
 
 ```
 src/main/java/algorithm_visualizer/
-	algorithms/
-		BFS.java
-		DFS.java
-		Dijkstra.java
-		EdmondsKarp.java
-	model/
-		Graph.java
-		Node.java
-		Edge.java
-		Position.java
-	steps/
-		StepType.java
-		AlgorithmStep.java
+├── algorithms/          # Algorithm implementations
+│   ├── BFS.java
+│   ├── DFS.java
+│   ├── Dijkstra.java
+│   └── EdmondsKarp.java
+├── model/               # Graph data structures
+│   ├── Graph.java
+│   ├── Node.java
+│   ├── Edge.java
+│   └── Position.java
+├── steps/               # Step/event system
+│   ├── StepType.java
+│   └── AlgorithmStep.java
+└── gui/                 # JavaFX visualization
+    ├── AlgorithmVisualizerApp.java
+    ├── MainController.java
+    ├── animation/
+    │   ├── NodeStyle.java
+    │   └── StepPlayer.java
+    ├── components/
+    │   ├── GraphCanvas.java
+    │   ├── AlgorithmSelector.java
+    │   ├── ControlPanel.java
+    │   └── InfoPanel.java
+    └── interaction/
+        ├── GraphEditor.java
+        └── NodeDragHandler.java
 ```
 
 ## Getting Started
@@ -80,7 +82,13 @@ src/main/java/algorithm_visualizer/
 - Java 25
 - Maven 3.8+
 
-### Run tests
+### Run the Application
+
+```bash
+mvn javafx:run
+```
+
+### Run Tests
 
 ```bash
 mvn test
@@ -92,29 +100,40 @@ mvn test
 mvn clean package
 ```
 
-## Example: BFS Usage
+## Usage Example
+
+### Programmatic Usage
 
 ```java
-Graph graph = new Graph(true);
+Graph graph = new Graph(true);  // directed graph
 graph.addNode(0, new Position(0, 0));
-graph.addNode(1, new Position(1, 1));
-graph.addNode(2, new Position(2, 2));
-graph.addEdge(0, 1, 1.0);
-graph.addEdge(1, 2, 1.0);
+graph.addNode(1, new Position(100, 100));
+graph.addNode(2, new Position(200, 200));
+graph.addEdge(0, 1, 2.0);
+graph.addEdge(1, 2, 3.0);
 
-BFS.BfsResult result = BFS.run(graph, 0, 2);
-System.out.println(result.isFound());
-System.out.println(result.getSteps());
+// Run BFS
+BFS.BfsResult bfsResult = BFS.run(graph, 0, 2);
+System.out.println("Found: " + bfsResult.isFound());
+System.out.println("Steps: " + bfsResult.getSteps().size());
+
+// Run Dijkstra
+Dijkstra.DijkstraResult dijkstraResult = Dijkstra.run(graph, 0, 2);
+System.out.println("Distance: " + dijkstraResult.getDistance().get(2));
+
+// Run Max Flow
+EdmondsKarp.EdmondsKarpResult flowResult = EdmondsKarp.run(graph, 0, 2);
+System.out.println("Max Flow: " + flowResult.getMaxFlow());
 ```
 
-## Roadmap
+### GUI Usage
 
-1. Finalize DFS with step generation
-2. Implement Dijkstra (`RELAX_EDGE`, shortest path reconstruction)
-3. Implement Edmonds-Karp (`UPDATE_FLOW`, residual updates)
-4. Build JavaFX canvas + controls
-5. Add import/export graph JSON
-
+1. Launch the application with `mvn javafx:run`
+2. The default sample graph is loaded automatically
+3. Select an algorithm from the dropdown
+4. Enter start node (and target/sink if needed)
+5. Click **Run** to start animation or **Step** for manual control
+6. Use the speed slider to adjust playback rate
 
 ## License
 
