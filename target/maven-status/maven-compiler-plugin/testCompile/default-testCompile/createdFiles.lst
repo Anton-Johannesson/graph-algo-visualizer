@@ -1,1 +1,12 @@
+algorithm_visualizer/algorithms/EdmondsKarpTest.class
 algorithm_visualizer/AppTest.class
+algorithm_visualizer/model/EdgeTest.class
+algorithm_visualizer/model/GraphRemoveNodeTest.class
+algorithm_visualizer/algorithms/DijkstraTest.class
+algorithm_visualizer/model/PositionTest.class
+algorithm_visualizer/algorithms/BFSTest.class
+algorithm_visualizer/algorithms/EdmondsKarpFlowStepsTest.class
+algorithm_visualizer/algorithms/DFSTest.class
+algorithm_visualizer/steps/AlgorithmStepTest.class
+algorithm_visualizer/model/GraphTest.class
+algorithm_visualizer/model/NodeTest.class
