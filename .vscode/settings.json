@@ -6,5 +6,7 @@
             "path": "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home",
             "default": true
         }
-    ]
+    ],
+    "jdk.jdkhome": "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home",
+    "jdk.project.jdkhome": "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home"
 }
