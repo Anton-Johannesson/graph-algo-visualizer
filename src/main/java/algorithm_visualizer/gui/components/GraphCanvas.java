@@ -27,6 +27,8 @@ public class GraphCanvas extends Canvas {
 
     private static final double NODE_RADIUS = 25.0;
     private static final double ARROW_SIZE = 10.0;
+    /** Sideways shift used so that opposite edges (A->B and B->A) do not overlap. */
+    private static final double PARALLEL_OFFSET = 8.0;
 
     private Graph graph;
     private final Map<Integer, NodeStyle> nodeStyles = new HashMap<>();
@@ -228,10 +230,19 @@ public class GraphCanvas extends Canvas {
         double ux = dx / length;
         double uy = dy / length;
 
-        double startX = from.getX() + ux * NODE_RADIUS;
-        double startY = from.getY() + uy * NODE_RADIUS;
-        double endX = to.getX() - ux * NODE_RADIUS;
-        double endY = to.getY() - uy * NODE_RADIUS;
+        // If the opposite edge also exists, shift this one sideways so both are visible.
+        // The reverse edge has the opposite direction, so its shift goes to the other side.
+        double offX = 0;
+        double offY = 0;
+        if (graph.hasEdge(edge.getToId(), edge.getFromId())) {
+            offX = -uy * PARALLEL_OFFSET;
+            offY = ux * PARALLEL_OFFSET;
+        }
+
+        double startX = from.getX() + ux * NODE_RADIUS + offX;
+        double startY = from.getY() + uy * NODE_RADIUS + offY;
+        double endX = to.getX() - ux * NODE_RADIUS + offX;
+        double endY = to.getY() - uy * NODE_RADIUS + offY;
 
         // Draw line
         gc.setStroke(edgeColor);
@@ -247,15 +258,26 @@ public class GraphCanvas extends Canvas {
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font(11));
 
+        // Edmonds-Karp uses the weight as capacity when the capacity is 0, so show the same
+        double effectiveCapacity = edge.getCapacity() > 0 ? edge.getCapacity() : edge.getWeight();
+
         String label;
         if (edgeFlows.containsKey(key)) {
-            label = String.format("%.0f/%.0f", edgeFlows.get(key), edge.getCapacity());
+            label = formatNumber(edgeFlows.get(key)) + "/" + formatNumber(effectiveCapacity);
         } else if (edge.getCapacity() > 0) {
-            label = String.format("%.0f", edge.getCapacity());
+            label = formatNumber(edge.getCapacity());
         } else {
-            label = String.format("%.1f", edge.getWeight());
+            label = formatNumber(edge.getWeight());
         }
         gc.fillText(label, midX + 10, midY - 5);
+    }
+
+    /** Formats whole numbers without decimals and everything else with two decimals. */
+    private static String formatNumber(double value) {
+        if (value == Math.rint(value) && Math.abs(value) < 1e15) {
+            return String.format("%.0f", value);
+        }
+        return String.format("%.2f", value);
     }
 
     private void drawArrowHead(GraphicsContext gc, double x, double y, double ux, double uy, Color color) {

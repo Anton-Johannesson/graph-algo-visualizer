@@ -6,6 +6,7 @@ import algorithm_visualizer.gui.components.GraphCanvas;
 import algorithm_visualizer.model.Edge;
 import algorithm_visualizer.model.Graph;
 import algorithm_visualizer.model.Position;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
@@ -49,6 +50,11 @@ public class GraphEditor {
     }
 
     private void handleLeftClick(MouseEvent event) {
+        // A click that is really the end of a drag must not create nodes/edges
+        if (!event.isStillSincePress()) {
+            return;
+        }
+
         Integer clickedNode = canvas.getNodeAt(event.getX(), event.getY());
 
         if (edgeMode) {
@@ -115,9 +121,15 @@ public class GraphEditor {
     }
 
     private void deleteNode(int nodeId) {
-        // Note: Graph class doesn't have removeNode - would need to rebuild
-        // For now, just log
-        System.out.println("Delete node not implemented - requires Graph.removeNode()");
+        Graph graph = canvas.getGraph();
+        if (graph == null || !graph.removeNode(nodeId)) {
+            return;
+        }
+        if (edgeStartNode != null && edgeStartNode == nodeId) {
+            edgeStartNode = null;
+        }
+        canvas.draw();
+        notifyGraphChanged();
     }
 
     private void promptForEdgeWeight(int fromId, int toId) {
@@ -128,7 +140,11 @@ public class GraphEditor {
 
         dialog.showAndWait().ifPresent(input -> {
             try {
-                double weight = Double.parseDouble(input);
+                double weight = Double.parseDouble(input.trim());
+                if (!Double.isFinite(weight) || weight < 0) {
+                    showError("Weight/capacity must be a finite number >= 0.");
+                    return;
+                }
                 Graph graph = canvas.getGraph();
                 if (graph != null && !graph.hasEdge(fromId, toId)) {
                     graph.addEdge(new Edge(fromId, toId, weight, weight));
@@ -139,9 +155,15 @@ public class GraphEditor {
                     notifyGraphChanged();
                 }
             } catch (NumberFormatException e) {
-                // Invalid input, ignore
+                showError("Not a number: " + input);
+            } catch (IllegalArgumentException e) {
+                showError(e.getMessage());
             }
         });
+    }
+
+    private void showError(String msg) {
+        new Alert(Alert.AlertType.ERROR, msg).showAndWait();
     }
 
     public void setEdgeMode(boolean edgeMode) {

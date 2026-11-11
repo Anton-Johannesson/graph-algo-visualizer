@@ -1,6 +1,7 @@
 package algorithm_visualizer.gui;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import algorithm_visualizer.algorithms.BFS;
@@ -27,6 +28,10 @@ import algorithm_visualizer.steps.AlgorithmStep;
  */
 public class MainController {
 
+    /** The configuration (algorithm, start, target) the loaded steps were computed from. */
+    private record RunConfig(AlgorithmType type, int startId, Integer targetId) {
+    }
+
     private final GraphCanvas canvas;
     private final ControlPanel controlPanel;
     private final AlgorithmSelector algorithmSelector;
@@ -35,6 +40,7 @@ public class MainController {
 
     private Graph graph;
     private final Set<Integer> visitedNodes = new HashSet<>();
+    private RunConfig loadedConfig;
 
     public MainController(GraphCanvas canvas, ControlPanel controlPanel,
             AlgorithmSelector algorithmSelector, InfoPanel infoPanel) {
@@ -101,51 +107,77 @@ public class MainController {
     private void runAlgorithm() {
         resetVisualization();
 
-        AlgorithmType type = algorithmSelector.getSelectedAlgorithm();
-        int startId = algorithmSelector.getStartNode();
-        Integer targetId = algorithmSelector.getTargetNode();
-
-        if (!graph.hasNode(startId)) {
-            infoPanel.appendLog("Error: Start node " + startId + " does not exist");
+        RunConfig cfg = currentConfig();
+        if (cfg == null) {
             return;
         }
-        if (targetId != null && !graph.hasNode(targetId)) {
-            infoPanel.appendLog("Error: Target node " + targetId + " does not exist");
-            return;
+        infoPanel.appendLog("Running " + cfg.type().getDisplayName() + "...");
+        infoPanel.appendLog("Start: " + cfg.startId()
+                + (cfg.targetId() != null ? ", Target/Sink: " + cfg.targetId() : ""));
+
+        if (loadSteps(cfg)) {
+            stepPlayer.play();
+        }
+    }
+
+    /** Reads the current selection. Returns null (after logging) if a node field is invalid. */
+    private RunConfig currentConfig() {
+        try {
+            return new RunConfig(algorithmSelector.getSelectedAlgorithm(),
+                    algorithmSelector.getStartNode(), algorithmSelector.getTargetNode());
+        } catch (IllegalArgumentException e) {
+            infoPanel.appendLog("Error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /** Validates the configuration and runs the algorithm. Returns null (after logging) on error. */
+    private List<AlgorithmStep> computeSteps(RunConfig cfg) {
+        if (!graph.hasNode(cfg.startId())) {
+            infoPanel.appendLog("Error: Start node " + cfg.startId() + " does not exist");
+            return null;
+        }
+        if (cfg.targetId() != null && !graph.hasNode(cfg.targetId())) {
+            infoPanel.appendLog("Error: Target node " + cfg.targetId() + " does not exist");
+            return null;
         }
 
         // Edmonds-Karp requires a sink node
-        if (type == AlgorithmType.EDMONDS_KARP && targetId == null) {
-            infoPanel.appendLog("Error: Edmonds-Karp requires a sink node.");
-            infoPanel.appendLog("Please enter a Sink Node ID in the field above.");
-            return;
+        if (cfg.type() == AlgorithmType.EDMONDS_KARP && cfg.targetId() == null) {
+            infoPanel.appendLog("Error: Edmonds-Karp requires a sink node (enter a Sink Node ID).");
+            return null;
         }
 
-        infoPanel.appendLog("Running " + type.getDisplayName() + "...");
-        infoPanel.appendLog("Start: " + startId + (targetId != null ? ", Target/Sink: " + targetId : ""));
-
         try {
-            var steps = switch (type) {
-                case BFS -> BFS.run(graph, startId, targetId).getSteps();
-                case DFS -> DFS.runDfs(graph, startId, targetId).getSteps();
-                case DIJKSTRA -> Dijkstra.run(graph, startId, targetId).getSteps();
-                case EDMONDS_KARP -> EdmondsKarp.run(graph, startId, targetId).getSteps();
+            return switch (cfg.type()) {
+                case BFS -> BFS.run(graph, cfg.startId(), cfg.targetId()).getSteps();
+                case DFS -> DFS.runDfs(graph, cfg.startId(), cfg.targetId()).getSteps();
+                case DIJKSTRA -> Dijkstra.run(graph, cfg.startId(), cfg.targetId()).getSteps();
+                case EDMONDS_KARP -> EdmondsKarp.run(graph, cfg.startId(), cfg.targetId()).getSteps();
             };
-
-            if (!steps.isEmpty()) {
-                stepPlayer.load(steps);
-                stepPlayer.setSpeed(controlPanel.getSpeed());
-
-                // Mark source/sink
-                canvas.setNodeStyle(startId, NodeStyle.SOURCE);
-                if (targetId != null) {
-                    canvas.setNodeStyle(targetId, NodeStyle.SINK);
-                }
-
-                stepPlayer.play();
-            }
         } catch (Exception e) {
             infoPanel.appendLog("Error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /** Computes and loads the steps for cfg. Returns false if nothing was loaded. */
+    private boolean loadSteps(RunConfig cfg) {
+        List<AlgorithmStep> steps = computeSteps(cfg);
+        if (steps == null || steps.isEmpty()) {
+            return false;
+        }
+        stepPlayer.load(steps);
+        stepPlayer.setSpeed(controlPanel.getSpeed());
+        loadedConfig = cfg;
+        markSourceAndSink(cfg);
+        return true;
+    }
+
+    private void markSourceAndSink(RunConfig cfg) {
+        canvas.setNodeStyle(cfg.startId(), NodeStyle.SOURCE);
+        if (cfg.targetId() != null) {
+            canvas.setNodeStyle(cfg.targetId(), NodeStyle.SINK);
         }
     }
 
@@ -154,64 +186,38 @@ public class MainController {
     }
 
     private void stepForward() {
-        if (stepPlayer.getTotalSteps() == 0) {
-            // Need to load algorithm first
-            loadAlgorithmSteps();
+        RunConfig cfg = currentConfig();
+        if (cfg == null) {
+            return;
+        }
+        if (stepPlayer.getTotalSteps() == 0 || !cfg.equals(loadedConfig)) {
+            // Nothing loaded, or the selection changed: reload from scratch
+            resetVisualization();
+            if (!loadSteps(cfg)) {
+                return;
+            }
         }
         stepPlayer.stepForward();
     }
 
     private void stepBackward() {
-        if (stepPlayer.getCurrentIndex() >= 0) {
+        if (loadedConfig != null && stepPlayer.getCurrentIndex() >= 0) {
             // Replay from beginning to previous step
             int targetIndex = stepPlayer.getCurrentIndex() - 1;
             replayToStep(targetIndex);
         }
     }
 
-    private void loadAlgorithmSteps() {
-        AlgorithmType type = algorithmSelector.getSelectedAlgorithm();
-        int startId = algorithmSelector.getStartNode();
-        Integer targetId = algorithmSelector.getTargetNode();
-
-        if (!graph.hasNode(startId))
-            return;
-
-        // Edmonds-Karp requires sink
-        if (type == AlgorithmType.EDMONDS_KARP && targetId == null) {
-            infoPanel.appendLog("Error: Please enter a Sink Node for Edmonds-Karp.");
-            return;
-        }
-
-        try {
-            var steps = switch (type) {
-                case BFS -> BFS.run(graph, startId, targetId).getSteps();
-                case DFS -> DFS.runDfs(graph, startId, targetId).getSteps();
-                case DIJKSTRA -> Dijkstra.run(graph, startId, targetId).getSteps();
-                case EDMONDS_KARP -> EdmondsKarp.run(graph, startId, targetId).getSteps();
-            };
-            stepPlayer.load(steps);
-
-            canvas.setNodeStyle(startId, NodeStyle.SOURCE);
-            if (targetId != null) {
-                canvas.setNodeStyle(targetId, NodeStyle.SINK);
-            }
-        } catch (Exception e) {
-            infoPanel.appendLog("Error: " + e.getMessage());
-        }
-    }
-
     private void replayToStep(int targetIndex) {
+        RunConfig cfg = loadedConfig;
+        if (cfg == null) {
+            return;
+        }
+
         // Reset visualization
         canvas.resetVisualization();
         visitedNodes.clear();
-
-        int startId = algorithmSelector.getStartNode();
-        Integer targetId = algorithmSelector.getTargetNode();
-        canvas.setNodeStyle(startId, NodeStyle.SOURCE);
-        if (targetId != null) {
-            canvas.setNodeStyle(targetId, NodeStyle.SINK);
-        }
+        markSourceAndSink(cfg);
 
         // Replay steps up to targetIndex
         var steps = stepPlayer.getSteps();
@@ -219,8 +225,8 @@ public class MainController {
             applyStepSilent(steps.get(i));
         }
 
-        // Update step player index (via reflection or direct access)
-        infoPanel.setStepCount(targetIndex + 1, stepPlayer.getTotalSteps());
+        // Sync the player's index (does not fire onStep)
+        stepPlayer.seekTo(targetIndex);
         canvas.draw();
     }
 
@@ -231,8 +237,11 @@ public class MainController {
     }
 
     private void applyStepSilent(AlgorithmStep step) {
-        int startId = algorithmSelector.getStartNode();
-        Integer targetId = algorithmSelector.getTargetNode();
+        if (loadedConfig == null) {
+            return;
+        }
+        int startId = loadedConfig.startId();
+        Integer targetId = loadedConfig.targetId();
 
         switch (step.getType()) {
             case VISIT_NODE -> {
@@ -265,11 +274,17 @@ public class MainController {
     }
 
     private void resetVisualization() {
-        stepPlayer.stop();
+        stepPlayer.load(List.of());
+        loadedConfig = null;
         canvas.resetVisualization();
         visitedNodes.clear();
         infoPanel.reset();
         canvas.draw();
+    }
+
+    /** Called by the graph editor when nodes or edges change. */
+    public void onGraphChanged() {
+        resetVisualization();
     }
 
     public Graph getGraph() {
