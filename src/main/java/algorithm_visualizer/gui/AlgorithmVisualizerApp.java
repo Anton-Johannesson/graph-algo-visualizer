@@ -4,6 +4,7 @@ import algorithm_visualizer.gui.components.AlgorithmSelector;
 import algorithm_visualizer.gui.components.ControlPanel;
 import algorithm_visualizer.gui.components.GraphCanvas;
 import algorithm_visualizer.gui.components.InfoPanel;
+import algorithm_visualizer.gui.interaction.GraphEditor;
 import algorithm_visualizer.gui.interaction.NodeDragHandler;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -37,7 +38,9 @@ public class AlgorithmVisualizerApp extends Application {
         // Create controller
         controller = new MainController(canvas, controlPanel, algorithmSelector, infoPanel);
 
-        // Setup drag handler
+        // Setup graph editor and drag handler
+        GraphEditor editor = new GraphEditor(canvas);
+        editor.setOnGraphChanged(controller::onGraphChanged);
         new NodeDragHandler(canvas);
 
         // Layout
@@ -70,7 +73,7 @@ public class AlgorithmVisualizerApp extends Application {
 
         // Instructions
         Label instructions = new Label(
-                "Left-click empty space to add node | Drag nodes to move | Right-click for context menu");
+                "Left-click empty space: add node | Drag: move node | Right-click: delete node / toggle edge mode (in edge mode, click two nodes to add an edge)");
         instructions.setPadding(new Insets(5));
         instructions.setStyle("-fx-background-color: #e0e0e0;");
         root.setBottom(instructions);

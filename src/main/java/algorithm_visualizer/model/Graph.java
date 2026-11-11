@@ -178,6 +178,25 @@ public class Graph {
         return this.nodes.size();
     }
 
+    /**
+     * Removes a node, its outgoing edges and all edges pointing to it.
+     * Works for undirected graphs too, since reverse edges are stored in the
+     * neighbours' lists.
+     *
+     * @param nodeId the node ID to remove
+     * @return true if the node existed
+     */
+    public boolean removeNode(int nodeId) {
+        if (nodes.remove(nodeId) == null) {
+            return false;
+        }
+        adjacanecy.remove(nodeId);
+        for (List<Edge> edges : adjacanecy.values()) {
+            edges.removeIf(e -> e.getToId() == nodeId);
+        }
+        return true;
+    }
+
     /** Removes all nodes and edges from the graph. */
     public void clear() {
         this.nodes.clear();

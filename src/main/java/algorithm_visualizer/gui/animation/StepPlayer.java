@@ -104,6 +104,15 @@ public class StepPlayer {
         }
     }
 
+    /** Moves the playback position without firing onStep. Pauses playback. */
+    public void seekTo(int index) {
+        if (playing) {
+            pause();
+        }
+        currentIndex = Math.max(-1, Math.min(index, steps.size() - 1));
+        notifyIndexChange();
+    }
+
     /**
      * Sets the playback speed.
      *

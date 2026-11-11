@@ -25,6 +25,8 @@ import algorithm_visualizer.steps.AlgorithmStep;
  */
 public class EdmondsKarp {
 
+    private static final double EPS = 1e-9;
+
     private EdmondsKarp() {
     }
 
@@ -59,6 +61,12 @@ public class EdmondsKarp {
         // Key: fromId -> (toId -> residual capacity)
         Map<Integer, Map<Integer, Double>> residual = new HashMap<>();
         initializeResidualGraph(graph, residual);
+
+        // Snapshot of the initial capacities, used to derive the total flow per edge
+        Map<Integer, Map<Integer, Double>> original = new HashMap<>();
+        for (var e : residual.entrySet()) {
+            original.put(e.getKey(), new HashMap<>(e.getValue()));
+        }
 
         double maxFlow = 0.0;
         List<List<Integer>> augmentingPaths = new ArrayList<>();
@@ -96,7 +104,9 @@ public class EdmondsKarp {
                 residual.computeIfAbsent(to, k -> new HashMap<>());
                 residual.get(to).merge(from, bottleneck, Double::sum);
 
-                steps.add(AlgorithmStep.updateFlow(from, to, bottleneck));
+                // Report the total flow on the original edge(s), not the delta
+                addFlowStep(steps, original, residual, from, to);
+                addFlowStep(steps, original, residual, to, from);
             }
 
             maxFlow += bottleneck;
@@ -105,6 +115,21 @@ public class EdmondsKarp {
         steps.add(AlgorithmStep.done("Max flow: " + maxFlow));
 
         return new EdmondsKarpResult(maxFlow, augmentingPaths, steps);
+    }
+
+    /**
+     * Emits an UPDATE_FLOW step carrying the total flow (capacity - residual) on
+     * the original edge from -> to. Does nothing if no such original edge exists.
+     */
+    private static void addFlowStep(List<AlgorithmStep> steps,
+            Map<Integer, Map<Integer, Double>> original,
+            Map<Integer, Map<Integer, Double>> residual, int from, int to) {
+        double cap = original.getOrDefault(from, Map.of()).getOrDefault(to, 0.0);
+        if (cap <= EPS) {
+            return;
+        }
+        double flow = cap - residual.get(from).getOrDefault(to, 0.0);
+        steps.add(AlgorithmStep.updateFlow(from, to, flow < EPS ? 0.0 : Math.min(flow, cap)));
     }
 
     /**
@@ -175,7 +200,7 @@ public class EdmondsKarp {
                 int neighbor = entry.getKey();
                 double capacity = entry.getValue();
 
-                if (!visited.contains(neighbor) && capacity > 0) {
+                if (!visited.contains(neighbor) && capacity > EPS) {
                     visited.add(neighbor);
                     parent.put(neighbor, current);
                     queue.add(neighbor);

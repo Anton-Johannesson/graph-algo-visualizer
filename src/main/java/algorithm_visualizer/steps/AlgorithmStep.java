@@ -105,12 +105,12 @@ public class AlgorithmStep {
      *
      * @param fromId the source node ID
      * @param toId   the target node ID
-     * @param delta  the flow delta
+     * @param flow   the total flow currently on the edge
      * @return the step
      */
-    public static AlgorithmStep updateFlow(int fromId, int toId, double delta) {
-        return new AlgorithmStep(StepType.UPDATE_FLOW, null, fromId, toId, delta,
-                "Update flow " + fromId + " -> " + toId + " (dist=" + delta + ")");
+    public static AlgorithmStep updateFlow(int fromId, int toId, double flow) {
+        return new AlgorithmStep(StepType.UPDATE_FLOW, null, fromId, toId, flow,
+                "Flow " + fromId + " -> " + toId + " = " + flow);
     }
 
     /**
