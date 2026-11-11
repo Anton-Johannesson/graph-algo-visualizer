@@ -108,6 +108,9 @@ public class MainController {
         resetVisualization();
 
         RunConfig cfg = currentConfig();
+        if (cfg == null) {
+            return;
+        }
         infoPanel.appendLog("Running " + cfg.type().getDisplayName() + "...");
         infoPanel.appendLog("Start: " + cfg.startId()
                 + (cfg.targetId() != null ? ", Target/Sink: " + cfg.targetId() : ""));
@@ -117,9 +120,15 @@ public class MainController {
         }
     }
 
+    /** Reads the current selection. Returns null (after logging) if a node field is invalid. */
     private RunConfig currentConfig() {
-        return new RunConfig(algorithmSelector.getSelectedAlgorithm(),
-                algorithmSelector.getStartNode(), algorithmSelector.getTargetNode());
+        try {
+            return new RunConfig(algorithmSelector.getSelectedAlgorithm(),
+                    algorithmSelector.getStartNode(), algorithmSelector.getTargetNode());
+        } catch (IllegalArgumentException e) {
+            infoPanel.appendLog("Error: " + e.getMessage());
+            return null;
+        }
     }
 
     /** Validates the configuration and runs the algorithm. Returns null (after logging) on error. */
@@ -178,6 +187,9 @@ public class MainController {
 
     private void stepForward() {
         RunConfig cfg = currentConfig();
+        if (cfg == null) {
+            return;
+        }
         if (stepPlayer.getTotalSteps() == 0 || !cfg.equals(loadedConfig)) {
             // Nothing loaded, or the selection changed: reload from scratch
             resetVisualization();

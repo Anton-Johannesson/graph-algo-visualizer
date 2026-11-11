@@ -96,16 +96,25 @@ public class AlgorithmSelector extends VBox {
         return algorithmCombo.getValue();
     }
 
-    /** Returns the start node ID entered by the user. */
+    /**
+     * Returns the start node ID entered by the user.
+     *
+     * @throws IllegalArgumentException if the field does not contain an integer
+     */
     public int getStartNode() {
+        String text = startNodeField.getText().trim();
         try {
-            return Integer.parseInt(startNodeField.getText().trim());
+            return Integer.parseInt(text);
         } catch (NumberFormatException e) {
-            return 0;
+            throw new IllegalArgumentException("Start node must be an integer, got: \"" + text + "\"");
         }
     }
 
-    /** Returns the target/sink node ID, or null if not specified. */
+    /**
+     * Returns the target/sink node ID, or null if the field is empty.
+     *
+     * @throws IllegalArgumentException if the field is non-empty but not an integer
+     */
     public Integer getTargetNode() {
         String text = targetNodeField.getText().trim();
         if (text.isEmpty()) {
@@ -114,7 +123,8 @@ public class AlgorithmSelector extends VBox {
         try {
             return Integer.parseInt(text);
         } catch (NumberFormatException e) {
-            return null;
+            throw new IllegalArgumentException(
+                    "Target/sink node must be an integer or empty, got: \"" + text + "\"");
         }
     }
 

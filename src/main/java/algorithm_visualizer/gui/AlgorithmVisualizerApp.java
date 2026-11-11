@@ -73,7 +73,12 @@ public class AlgorithmVisualizerApp extends Application {
 
         // Instructions
         Label instructions = new Label(
-                "Left-click empty space: add node | Drag: move node | Right-click: delete node / toggle edge mode (in edge mode, click two nodes to add an edge)");
+                "Left-click empty space: add node | Drag: move node | "
+                        + "To add an edge: right-click (two-finger click on Mac) > 'Enter Edge Mode', "
+                        + "then click two nodes and enter a weight/capacity | "
+                        + "Right-click again > 'Exit Edge Mode' to add nodes again | "
+                        + "Right-click a node > 'Delete Node'");
+        instructions.setWrapText(true);
         instructions.setPadding(new Insets(5));
         instructions.setStyle("-fx-background-color: #e0e0e0;");
         root.setBottom(instructions);
